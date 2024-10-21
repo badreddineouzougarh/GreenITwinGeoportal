@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenCity</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.101/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.101/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar {
+            background-color: black;
+            color: white;
+            padding: 15px;
+            width: 300px;
+            height: 100%;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            overflow-x: hidden;
+            transition: 0.5s;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+        }
+
+        .sidebar input {
+            margin-right: 10px;
+        }
+
+        .toggle-button {
+            position: absolute;
+            top: 20px;
+            left: 320px;
+            background-color: gray;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <h2>Content Layers</h2>
+        <div>
+            <label><input type="checkbox" id="lod1"> LOD1 Buildings</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="lod2"> LOD2 Buildings</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="roads"> Roads</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="trees"> Vegetation</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="waterbody"> Waterbody</label>
+        </div>
+    </div>
+
+    <button class="toggle-button" id="toggleButton">Toggle Sidebar</button>
+
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // Cesium token (replace with your actual token)
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0ZTk3YmY2Yy1kNzJiLTQ3NGQtYmQwNi00MTM2MzRiYzViNjgiLCJpZCI6MTY2MDY2LCJpYXQiOjE3MTQwNTMzOTB9.fCHvQM21IEbq8tk9fWGATbXsjtatlmq17vEmc12xc6A';
+
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            
+            baseLayerPicker: true
+        });
+
+        // Variables to store tilesets
+        let lod1Tileset, lod2Tileset, roadsTileset, treesTileset, waterbodyTileset;
+
+        // Load tilesets with styles applied
+        async function loadTilesets() {
+            try {
+                // LOD1 Buildings (Orange)
+                lod1Tileset = new Cesium.Cesium3DTileset({
+                    url: Cesium.IonResource.fromAssetId(2553919)
+                });
+                viewer.scene.primitives.add(lod1Tileset);
+                lod1Tileset.style = new Cesium.Cesium3DTileStyle({
+                    color: "color('orange')"
+                });
+                lod1Tileset.show = false; // Initially hidden
+
+                // LOD2 Buildings (Conditional Styling)
+                lod2Tileset = new Cesium.Cesium3DTileset({
+                    url: Cesium.IonResource.fromAssetId(2581592)
+                });
+                viewer.scene.primitives.add(lod2Tileset);
+                lod2Tileset.style = new Cesium.Cesium3DTileStyle({
+                    color: {
+                        conditions: [
+                            ['${Geometr_3D} === "roof"', 'color("red")'],
+                            ['true', 'color("white")']
+                        ]
+                    }
+                });
+                lod2Tileset.show = false; // Initially hidden
+
+                // Roads (Temporary solid color)
+                roadsTileset = new Cesium.Cesium3DTileset({
+                    url: Cesium.IonResource.fromAssetId(2766816)
+                });
+                viewer.scene.primitives.add(roadsTileset);
+                roadsTileset.style = new Cesium.Cesium3DTileStyle({
+                    color: "color('black')" // Temporary color
+                });
+                roadsTileset.show = false; // Initially hidden
+                console.log('Roads Tileset:', roadsTileset); // Debug log
+
+                // Vegetation (Green)
+                treesTileset = new Cesium.Cesium3DTileset({
+                    url: Cesium.IonResource.fromAssetId(2758859)
+                });
+                viewer.scene.primitives.add(treesTileset);
+                treesTileset.style = new Cesium.Cesium3DTileStyle({
+                    color: "color('green')"
+                });
+                treesTileset.show = false; // Initially hidden
+
+                // Waterbody (Temporary solid color)
+                waterbodyTileset = new Cesium.Cesium3DTileset({
+                    url: Cesium.IonResource.fromAssetId(2766942)
+                });
+                viewer.scene.primitives.add(waterbodyTileset);
+                waterbodyTileset.style = new Cesium.Cesium3DTileStyle({
+                    color: "color('blue')" // Temporary color
+                });
+                waterbodyTileset.show = true; // Initially shown
+                console.log('Waterbody Tileset:', waterbodyTileset); // Debug log
+
+                // Zoom to Waterbody initially
+                viewer.zoomTo(waterbodyTileset);
+            } catch (error) {
+                console.error('Error loading tilesets:', error);
+            }
+        }
+
+        // Call the function to load the tilesets
+        loadTilesets();
+
+        // Toggle tilesets visibility based on checkbox changes
+        document.getElementById('lod1').addEventListener('change', function () {
+            lod1Tileset.show = this.checked;
+        });
+
+        document.getElementById('lod2').addEventListener('change', function () {
+            lod2Tileset.show = this.checked;
+        });
+
+        document.getElementById('roads').addEventListener('change', function () {
+            roadsTileset.show = this.checked;
+        });
+
+        document.getElementById('trees').addEventListener('change', function () {
+            treesTileset.show = this.checked;
+        });
+
+        document.getElementById('waterbody').addEventListener('change', function () {
+            waterbodyTileset.show = this.checked;
+        });
+
+        // Sidebar toggle functionality
+        const sidebar = document.getElementById('sidebar');
+        const toggleButton = document.getElementById('toggleButton');
+        toggleButton.addEventListener('click', function () {
+            if (sidebar.style.left === '0px') {
+                sidebar.style.left = '-300px';
+            } else {
+                sidebar.style.left = '0px';
+            }
+        });
+    </script>
+
+</body>
+
+</html>
