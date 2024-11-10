@@ -14,6 +14,7 @@
             margin: 0;
             padding: 0;
             height: 100%;
+            font-family: "Lato", sans-serif;
         }
 
         #cesiumContainer {
@@ -24,181 +25,207 @@
             top: 0;
         }
 
+        /* Sidebar styling */
         .sidebar {
-            background-color: black;
-            color: white;
-            padding: 15px;
-            width: 300px;
             height: 100%;
+            width: 0;
             position: fixed;
             z-index: 1;
             top: 0;
             left: 0;
+            background-color: #111;
             overflow-x: hidden;
             transition: 0.5s;
+            padding-top: 60px;
+            color: white;
+        }
+
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 1.5rem;
+            color: #818181;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover {
+            color: #f1f1f1;
         }
 
         .sidebar h2 {
             text-align: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 20px;
         }
 
-        .sidebar input {
-            margin-right: 10px;
-        }
-
-        .toggle-button {
+        .closebtn {
             position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            color: #818181;
+            margin-left: 50px;
+            cursor: pointer;
+        }
+
+        /* Button to open sidebar */
+        .openbtn {
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #111;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            position: fixed;
             top: 20px;
-            left: 320px;
-            background-color: gray;
+            left: 20px;
+            z-index: 2;
+            transition: background-color 0.3s;
+        }
+
+        .openbtn:hover {
+            background-color: #444;
+        }
+
+        /* Layer controls */
+        .layer-control {
+            background-color: #4a4a4a;
+            padding: 10px;
+            margin: 10px 15px;
+            font-size: 1.2rem;
+            cursor: pointer;
             color: white;
             border: none;
-            padding: 10px;
-            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .layer-options {
+            display: none;
+            margin-left: 15px;
+        }
+
+        .layer-control.active+.layer-options {
+            display: block;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="sidebar" id="sidebar">
-        <h2>Content Layers</h2>
-        <div>
-            <label><input type="checkbox" id="lod1"> LOD1 Buildings</label>
-        </div>
-        <div>
+    <!-- Sidebar -->
+    <div id="mySidebar" class="sidebar">
+        <span class="closebtn" onclick="closeNav()">×</span>
+        <h2>City Layers</h2>
+        <button class="layer-control" onclick="toggleLayerOptions(this)">Buildings</button>
+        <div class="layer-options">
+            <label><input type="checkbox" id="lod1"> LOD1 Buildings</label><br>
             <label><input type="checkbox" id="lod2"> LOD2 Buildings</label>
         </div>
-        <div>
+        <button class="layer-control" onclick="toggleLayerOptions(this)">Transporation</button>
+        <div class="layer-options">
             <label><input type="checkbox" id="roads"> Roads</label>
         </div>
-        <div>
-            <label><input type="checkbox" id="trees"> Vegetation</label>
+        <button class="layer-control" onclick="toggleLayerOptions(this)">Vegetation</button>
+        <div class="layer-options">
+            <label><input type="checkbox" id="trees"> Trees</label>
         </div>
-        <div>
+        <button class="layer-control" onclick="toggleLayerOptions(this)">Waterbody</button>
+        <div class="layer-options">
             <label><input type="checkbox" id="waterbody"> Waterbody</label>
+        </div>
+        <button class="layer-control" onclick="toggleLayerOptions(this)">City Furniture</button>
+        <div class="layer-options">
+            <label><input type="checkbox" id="lamps"> Street Lamps</label>
         </div>
     </div>
 
-    <button class="toggle-button" id="toggleButton">Toggle Sidebar</button>
+    <!-- Button to open sidebar -->
+    <button class="openbtn" onclick="openNav()">☰ </button>
 
+    <!-- Cesium Container -->
     <div id="cesiumContainer"></div>
 
     <script>
-        // Cesium token (replace with your actual token)
+        // Initialize Cesium viewer
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0ZTk3YmY2Yy1kNzJiLTQ3NGQtYmQwNi00MTM2MzRiYzViNjgiLCJpZCI6MTY2MDY2LCJpYXQiOjE3MTQwNTMzOTB9.fCHvQM21IEbq8tk9fWGATbXsjtatlmq17vEmc12xc6A';
-
-        const viewer = new Cesium.Viewer('cesiumContainer', {
-            
-            baseLayerPicker: true
-        });
-
-        // Variables to store tilesets
-        let lod1Tileset, lod2Tileset, roadsTileset, treesTileset, waterbodyTileset;
-
-        // Load tilesets with styles applied
-        async function loadTilesets() {
-            try {
-                // LOD1 Buildings (Orange)
-                lod1Tileset = new Cesium.Cesium3DTileset({
-                    url: Cesium.IonResource.fromAssetId(2553919)
-                });
-                viewer.scene.primitives.add(lod1Tileset);
-                lod1Tileset.style = new Cesium.Cesium3DTileStyle({
-                    color: "color('orange')"
-                });
-                lod1Tileset.show = false; // Initially hidden
-
-                // LOD2 Buildings (Conditional Styling)
-                lod2Tileset = new Cesium.Cesium3DTileset({
-                    url: Cesium.IonResource.fromAssetId(2581592)
-                });
-                viewer.scene.primitives.add(lod2Tileset);
-                lod2Tileset.style = new Cesium.Cesium3DTileStyle({
-                    color: {
-                        conditions: [
-                            ['${Geometr_3D} === "roof"', 'color("red")'],
-                            ['true', 'color("white")']
-                        ]
-                    }
-                });
-                lod2Tileset.show = false; // Initially hidden
-
-                // Roads (Temporary solid color)
-                roadsTileset = new Cesium.Cesium3DTileset({
-                    url: Cesium.IonResource.fromAssetId(2766816)
-                });
-                viewer.scene.primitives.add(roadsTileset);
-                roadsTileset.style = new Cesium.Cesium3DTileStyle({
-                    color: "color('black')" // Temporary color
-                });
-                roadsTileset.show = false; // Initially hidden
-                console.log('Roads Tileset:', roadsTileset); // Debug log
-
-                // Vegetation (Green)
-                treesTileset = new Cesium.Cesium3DTileset({
-                    url: Cesium.IonResource.fromAssetId(2758859)
-                });
-                viewer.scene.primitives.add(treesTileset);
-                treesTileset.style = new Cesium.Cesium3DTileStyle({
-                    color: "color('green')"
-                });
-                treesTileset.show = false; // Initially hidden
-
-                // Waterbody (Temporary solid color)
-                waterbodyTileset = new Cesium.Cesium3DTileset({
-                    url: Cesium.IonResource.fromAssetId(2766942)
-                });
-                viewer.scene.primitives.add(waterbodyTileset);
-                waterbodyTileset.style = new Cesium.Cesium3DTileStyle({
-                    color: "color('blue')" // Temporary color
-                });
-                waterbodyTileset.show = true; // Initially shown
-                console.log('Waterbody Tileset:', waterbodyTileset); // Debug log
-
-                // Zoom to Waterbody initially
-                viewer.zoomTo(waterbodyTileset);
-            } catch (error) {
-                console.error('Error loading tilesets:', error);
-            }
-        }
-
-        // Call the function to load the tilesets
-        loadTilesets();
-
-        // Toggle tilesets visibility based on checkbox changes
-        document.getElementById('lod1').addEventListener('change', function () {
-            lod1Tileset.show = this.checked;
-        });
-
-        document.getElementById('lod2').addEventListener('change', function () {
-            lod2Tileset.show = this.checked;
-        });
-
-        document.getElementById('roads').addEventListener('change', function () {
-            roadsTileset.show = this.checked;
-        });
-
-        document.getElementById('trees').addEventListener('change', function () {
-            treesTileset.show = this.checked;
-        });
-
-        document.getElementById('waterbody').addEventListener('change', function () {
-            waterbodyTileset.show = this.checked;
-        });
+        const viewer = new Cesium.Viewer('cesiumContainer', { baseLayerPicker: true });
 
         // Sidebar toggle functionality
-        const sidebar = document.getElementById('sidebar');
-        const toggleButton = document.getElementById('toggleButton');
-        toggleButton.addEventListener('click', function () {
-            if (sidebar.style.left === '0px') {
-                sidebar.style.left = '-300px';
-            } else {
-                sidebar.style.left = '0px';
-            }
-        });
-    </script>
+        function openNav() {
+            document.getElementById("mySidebar").style.width = "250px";
+        }
 
+        function closeNav() {
+            document.getElementById("mySidebar").style.width = "0";
+        }
+
+        // Layer options toggle function
+        function toggleLayerOptions(button) {
+            button.classList.toggle('active');
+        }
+
+        // Load and toggle layers visibility logic
+        let lod1Tileset, lod2Tileset, roadsTileset, treesTileset, waterbodyTileset, lampsTileset;
+
+        async function loadTilesets() {
+            lod1Tileset = await loadTileset(2553919, "color('orange')", false);
+            lod2Tileset = await loadTileset(2581592, {
+                conditions: [['${Geometr_3D} === "roof"', 'color("red")'], ['true', 'color("white")']]
+            }, false);
+            roadsTileset = await Cesium.GeoJsonDataSource.load(await Cesium.IonResource.fromAssetId(2814318));
+            viewer.dataSources.add(roadsTileset);
+            roadsTileset.entities.values.forEach(entity => {
+                entity.polygon.material = Cesium.Color.BLACK;
+            });
+            roadsTileset.show = false;
+            treesTileset = await loadTileset(2787959, "color('green')", false);
+            waterbodyTileset = await Cesium.GeoJsonDataSource.load(await Cesium.IonResource.fromAssetId(2814236));
+            viewer.dataSources.add(waterbodyTileset);
+            waterbodyTileset.entities.values.forEach(entity => {
+                    entity.polygon.material = Cesium.Color.BLUE;
+                });
+            waterbodyTileset.show = false;
+            lampsTileset = await loadTileset(2783698, "color('yellow')", false);
+            viewer.zoomTo(viewer.scene.primitives);
+        }
+
+        async function loadTileset(assetId, style, showInitially = false) {
+            const tileset = new Cesium.Cesium3DTileset({ url: Cesium.IonResource.fromAssetId(assetId) });
+            viewer.scene.primitives.add(tileset);
+            tileset.style = new Cesium.Cesium3DTileStyle({ color: style });
+            tileset.show = showInitially;
+            return tileset;
+        }
+
+        loadTilesets();
+
+        document.querySelectorAll('.layer-options input').forEach(input => {
+            input.addEventListener('change', () => {
+                toggleVisibilityAndZoom(input.id, input.checked);
+            });
+        });
+
+        function toggleVisibilityAndZoom(layerId, isChecked) {
+            const layerMap = {
+                lod1: lod1Tileset,
+                lod2: lod2Tileset,
+                roads: roadsTileset,
+                trees: treesTileset,
+                waterbody: waterbodyTileset,
+                lamps: lampsTileset
+            };
+            const layer = layerMap[layerId];
+            if (layer) {
+                layer.show = isChecked;
+                if (isChecked) viewer.zoomTo(layer);
+            }
+        }
+    </script>
 </body>
 
 </html>
